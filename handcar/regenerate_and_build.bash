@@ -61,6 +61,7 @@ if [ -z "${NO_GIT}" ]; then
     pause "Preparing to clone spike"
     rm -rf standalone
     git clone https://github.com/riscv/riscv-isa-sim standalone
+    sleep 5
     cd standalone || exit 3
     git checkout 61f0dab33f7e529cc709908840311a8a7dcb23ce
 else
