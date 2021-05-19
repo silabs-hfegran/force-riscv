@@ -12,6 +12,6 @@ export FORCE_PYTHON_VER=3
 export FORCE_CC=g++
 export LD_LIBRARY_PATH=${FORCE_PYTHON_LIB}:${LD_LIBRARY_PATH}
 
-bsub -Ip -q batch -n 8 ./regenerate_and_build.bash
+bsub -Ip -q batch -n 8 ./regenerate_and_build.bash -n
 
 

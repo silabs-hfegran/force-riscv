@@ -158,7 +158,7 @@
 >     USED = true,
 >     UNUSED = false
 >   };
-105,175c60,135
+105,175c60,92
 < void merge_overlapping_memory_regions(std::vector<std::pair<reg_t, mem_t*>>& mems)
 < {
 <   // check the user specified memory regions and merge the overlapping or
@@ -264,8 +264,11 @@
 >     const char arg2[] = "no_elf\0";
 >     memcpy(_stored_argv[0], arg1, strlen(arg1)+1);
 >     memcpy(_stored_argv[_stored_argc-1], arg2, strlen(arg2)+1);
->   }
-> 
+178,180c95,216
+<   merge_overlapping_memory_regions(res);
+<   return res;
+< }
+---
 >   
 >   // _unpackFlatOptions function: takes a space separated options string, formatted as it would be for command line arguments for the Spike original executable, 
 >   //    and recomposes it into an argument vector so that spike argument parsing code can work exactly as it was designed to work. 
@@ -307,13 +310,9 @@
 >     {
 >       _token_vector.push_back(flat_options_temp);
 >     }
-178,180d137
-<   merge_overlapping_memory_regions(res);
-<   return res;
-< }
-182c139,485
-< int main(int argc, char** argv)
----
+>   }
+> 
+> 
 >   // _rejectOrEnroll function: looks up an option by name from the _options_map and determines if the right types of arguments have been provided. If so, the option is enabled and the argument is stored.
 >   //
 >   // inputs:
@@ -392,7 +391,9 @@
 > 
 >     return  SUCCESS;
 >   }
-> 
+182c218,485
+< int main(int argc, char** argv)
+---
 > 
 >   // _resetArgMatrix function: clears the memory allocated to char** _stored_argv, uses count of number of enabled options to resize char** _stored_argv. 
 >   //               Then, memory is allocated for the elements and the first and last elements are set to dummy arguements.
@@ -883,7 +884,7 @@
 >     hartids);
 >   _pSimulatorTopLevel->set_dtb_enabled(dtb_enabled);
 >  
-375,377c610,663
+375,377c610,1154
 <     if (ic) s.get_core(i)->get_mmu()->register_memtracer(&*ic);
 <     if (dc) s.get_core(i)->get_mmu()->register_memtracer(&*dc);
 <     if (extension) s.get_core(i)->register_extension(extension());
@@ -942,11 +943,8 @@
 >   {
 >     delete _pSimulatorTopLevel;
 >     _pSimulatorTopLevel = nullptr;
-380,382c666,735
-<   s.set_debug(debug);
-<   s.configure_log(log, log_commits);
-<   s.set_histogram(histogram);
----
+>   }
+> 
 >   // originally handled by smart pointers, but we have to delete these manually now.
 >   if(ic != nullptr)
 >   {
@@ -1017,12 +1015,8 @@
 > 
 >   return rcode;
 > }
-384d736
-<   auto return_code = s.run();
-386,387c738,779
-<   for (auto& mem : mems)
-<     delete mem.second;
----
+> 
+> 
 > void dump_memory(const char* file_to_create)
 > {
 >   //if(_pMemories != nullptr)
@@ -1065,16 +1059,12 @@
 >     _pSimulatorTopLevel->dump_sparse_memory(dump2);    
 >   //}
 > }
-389,390d780
-<   for (auto& plugin_device : plugin_devices)
-<     delete plugin_device.second;
-392c782,784
-<   return return_code;
----
+> 
+> 
 > int step_simulator(int target_id, int num_steps, int stx_failed)
 > {
 >   return _pSimulatorTopLevel->step_simulator(target_id, num_steps, stx_failed);
-393a786,1302
+> }
 > 
 > 
 > int get_disassembly(const uint64_t* pc, char** opcode, char** disassembly)
@@ -1088,6 +1078,41 @@
 >   return _pSimulatorTopLevel->get_disassembly(target_id, pc, opcode, disassembly);
 > }
 > 
+> int get_instruction_for_target(int target_id, const uint64_t* pc, uint64_t* insn) 
+> {
+>   try {
+>     insn_fetch_t fetched = _pSimulatorTopLevel->get_core(target_id)->get_mmu()->load_insn(*pc);
+>     *insn = fetched.insn.bits();
+>     if ((*insn & 0x3ULL) != 0x3ULL) {
+>       *insn &= 0xFFFFULL;
+>     }
+>     *insn &= 0xFFFFFFFFULL;
+>     return 0; // Completed successfully
+>   } catch (...) {
+>     insn = 0;
+>     return 1; // Failed to get loaded insn
+>   }
+> }
+> 
+> int get_isize_for_target(int target_id, const uint64_t* pc, uint8_t* isize)
+> {
+>   uint64_t insn;
+>   try {
+>     insn_fetch_t fetched = _pSimulatorTopLevel->get_core(target_id)->get_mmu()->load_insn(*pc);
+>     uint64_t insn = fetched.insn.bits();
+>     if ((insn & 0x3ULL) != 0x3ULL) {
+>       *isize = 2;
+>     } else {
+>       *isize = 4;
+>     }
+>     return 0; // Completed successfully
+>   }
+> 
+>   catch (...) {
+>     isize = 0;
+>     return 1; // Failed to get loaded insn
+>   }
+> }
 > 
 > int get_simulator_version(char* version)
 > {
@@ -1409,8 +1434,11 @@
 >   if(length < 0)
 >   {
 >     return 2;
->   }
-> 
+380,382c1157,1167
+<   s.set_debug(debug);
+<   s.configure_log(log, log_commits);
+<   s.set_histogram(histogram);
+---
 >   if(_pSimulatorTopLevel->sparse_is_pa_initialized(static_cast<reg_t>(*addr), static_cast<size_t>(length)))
 >   {
 >     _pSimulatorTopLevel->sparse_write(static_cast<reg_t>(*addr), data, static_cast<size_t>(length));
@@ -1422,7 +1450,9 @@
 > 
 >   return 0;
 > }
-> 
+384c1169,1175
+<   auto return_code = s.run();
+---
 > int initialize_simulator_memory(int target_id, const uint64_t* addr, int length, uint64_t data)
 > { 
 >   // check that the pointers point to something 
@@ -1430,18 +1460,26 @@
 >   {
 >     return 1;
 >   }
-> 
+386,387c1177,1181
+<   for (auto& mem : mems)
+<     delete mem.second;
+---
 >   // check that the length argument is not out of regulation
 >   if(length < 0 || length > 8)
 >   {
 >     return 2;
 >   }
-> 
+389,390c1183,1184
+<   for (auto& plugin_device : plugin_devices)
+<     delete plugin_device.second;
+---
 >   // the checks such as they are have passed, perform the read
 >   _pSimulatorTopLevel->sparse_initialize_pa(static_cast<reg_t>(*addr), data, static_cast<size_t>(length));
-> 
+392c1186
+<   return return_code;
+---
 >   return 0;
-> }
+393a1188,1337
 > 
 > int translate_virtual_address(int target_id, const uint64_t* vaddr, int intent, uint64_t* paddr, uint64_t* memattrs)
 > {

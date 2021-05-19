@@ -852,6 +852,14 @@
 ---
 >       //if (get_field(state.mstatus, MSTATUS_TVM))
 >       //  require_privilege(PRV_M);
+1047c1583
+<     case CSR_MARCHID: return 5;
+---
+>     case CSR_MARCHID: return 4;
+1049c1585
+<     case CSR_MVENDORID: return 0;
+---
+>     case CSR_MVENDORID: return 0x602;
 1122a1659,2052
 >       //require_vector_vs;
 >       //if (!supports_extension('V'))
@@ -1126,17 +1134,17 @@
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
 >       return state.misa;
 >     case CSR_MARCHID:
->       effective_value = 5;
+>       effective_value = 4;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
->       return 5;
+>       return 4;
 >     case CSR_MIMPID: 
 >       effective_value = 0;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
 >       return 0;
 >     case CSR_MVENDORID:
->       effective_value = 0;
+>       effective_value = 0x602;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
->       return 0;
+>       return 0x602;
 >     case CSR_MHARTID:
 >       effective_value = id;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");

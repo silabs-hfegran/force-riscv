@@ -128,6 +128,36 @@ int step_simulator(int target_id, int num_steps, int stx_failed);
 int get_disassembly(const uint64_t* pPc, char** pOpcode, char** pDisassembly);
 int get_disassembly_for_target(int target_id, const uint64_t* pPc, char** pOpcode, char** pDisassembly);
 
+// get_instruction_for_target: get the current instruction for the given pc and target
+//
+// inputs:
+//     int target_id -- refers to the processor id
+//     const uint64_t* pc -- given for some reason as a constant pointer (as requested for the API), dereferenced to obtain the pc address
+//
+// outputs:
+//     uint64_t* insn -- location to copy the current instruction to
+//
+// returns:
+//     0 -- Success
+//     1 -- Failed to obtain instruction
+//
+int get_instruction_for_target(int target_id, const uint64_t* pc, uint64_t* insn);
+
+// get_isize_for_target: get the current instruction size for the given pc and target
+//
+// inputs:
+//     int target_id -- refers to the processor id
+//     const uint64_t* pc -- given for some reason as a constant pointer (as requested for the API), dereferenced to obtain the pc address
+//
+// outputs:
+//     uint8_t* isize -- location to copy the current instruction size to
+//
+// returns:
+//     0 -- Success
+//     1 -- Failed to obtain isize for given instruction
+//
+int get_isize_for_target(int target_id, const uint64_t* pc, uint8_t* isize);
+
 // read_simulator_memory function: for the given target_id and physical address addr and length, writes the contents of the relevant memory address into the provided data buffer
 //
 // inputs:

@@ -96,7 +96,7 @@ echo "^^^^^ End auto-edit output ^^^^^"
 pause "Please review edit(s) above"
 
 pause "===== Preparing to configure"
-./configure
+./configure --with-isa=RV32IMC --with-priv=M --enable-misaligned CXXFLAGS="-g -O0" CFLAGS="-g -O0"
 
 # NOTE: Compile runs twice due to failure from this flag, so disabling it
 echo "===== Preparing to edit makefile"
