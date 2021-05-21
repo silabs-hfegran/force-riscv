@@ -6,7 +6,6 @@ mkdir -p patches/insns
 mkdir -p patched/insns
 
 cp ../standalone/riscv/processor.cc ./originals
-cp ../spike_mod/processor.cc ./modified
 cp ../standalone/spike_main/spike.cc ./originals
 
 rm patches/processor.cc.patch  

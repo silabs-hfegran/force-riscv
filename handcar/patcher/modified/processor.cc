@@ -803,9 +803,11 @@ void processor_t::set_csr(int which, reg_t val)
                   || supports_extension('V');
       bool has_vs = supports_extension('V');
 
-      reg_t mask = MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_MPRV
+      reg_t mask = MSTATUS_MIE | MSTATUS_MPIE 
+                 | (supports_extension('U') ?  MSTATUS_MPRV : 0)
                  | (supports_extension('S') ? (MSTATUS_SUM | MSTATUS_SIE | MSTATUS_SPIE) : 0)
-                 | MSTATUS_MXR | MSTATUS_TW | MSTATUS_TVM | MSTATUS_TSR
+                 | (supports_extension('S') ? (MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR) : 0)
+                 | (supports_extension('S') || supports_extension('U') ? MSTATUS_TW : 0)
                  | (has_fs ? MSTATUS_FS : 0)
                  | (has_vs ? MSTATUS_VS : 0)
                  | (ext ? MSTATUS_XS : 0);
@@ -1175,9 +1177,11 @@ void processor_t::set_csr_api(int which, reg_t val)
                   || supports_extension('V');
       bool has_vs = supports_extension('V');
 
-      reg_t mask = MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_MPRV
+      reg_t mask = MSTATUS_MIE | MSTATUS_MPIE 
+                 | (supports_extension('U') ?  MSTATUS_MPRV : 0)
                  | (supports_extension('S') ? (MSTATUS_SUM | MSTATUS_SIE | MSTATUS_SPIE) : 0)
-                 | MSTATUS_MXR | MSTATUS_TW | MSTATUS_TVM | MSTATUS_TSR
+                 | (supports_extension('S') ? (MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR) : 0)
+                 | (supports_extension('S') || supports_extension('U') ? MSTATUS_TW : 0)
                  | (has_fs ? MSTATUS_FS : 0)
                  | (has_vs ? MSTATUS_VS : 0)
                  | (ext ? MSTATUS_XS : 0);

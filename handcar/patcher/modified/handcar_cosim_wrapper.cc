@@ -377,6 +377,7 @@ public:
       {"l2", {UNUSED, '0', "l2", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the l2 cache model
       {"log-cache-miss", {UNUSED, '0', "log-cache-miss", UNUSED, UNUSED, 0, ""}}, // if present, enable logging of estimated cache misses
       {"varch", {UNUSED, '0', "varch", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the RISC-V Vector uArch string
+      {"priv", {UNUSED, '0', "priv", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the RISC-V privilege mode string
       //
       //WARNING, IT'S NOT A GREAT IDEA TO PLAY WITH THESE FOLLOWING OPTIONS UNLESS YOU KNOW WHAT YOU'RE DOING
       //
@@ -613,6 +614,7 @@ void initialize_simulator(const char* options)
  
   _pSimulatorTopLevel->set_log(log);
   _pSimulatorTopLevel->set_histogram(histogram);
+
 
   argc=0;
   argv=nullptr;

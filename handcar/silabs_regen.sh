@@ -11,6 +11,7 @@ export FORCE_PYTHON_LIB=/designtools/python_3.6.5/lib
 export FORCE_PYTHON_VER=3
 export FORCE_CC=g++
 export LD_LIBRARY_PATH=${FORCE_PYTHON_LIB}:${LD_LIBRARY_PATH}
+export OPTIMIZATION=-O0
 
 bsub -Ip -q batch -n 8 ./regenerate_and_build.bash -n
 

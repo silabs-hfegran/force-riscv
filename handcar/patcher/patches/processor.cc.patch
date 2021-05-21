@@ -262,36 +262,46 @@
 >       effective_value = (state.fflags << FSR_AEXC_SHIFT) | (state.frm << FSR_RD_SHIFT);
 719a795
 >       effective_value = (VU.vxsat << VCSR_VXSAT_SHIFT) | (VU.vxrm << VCSR_VXRM_SHIFT);
-757a834
+730c806,807
+<       reg_t mask = MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_MPRV
+---
+>       reg_t mask = MSTATUS_MIE | MSTATUS_MPIE 
+>                  | (supports_extension('U') ?  MSTATUS_MPRV : 0)
+732c809,810
+<                  | MSTATUS_MXR | MSTATUS_TW | MSTATUS_TVM | MSTATUS_TSR
+---
+>                  | (supports_extension('S') ? (MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR) : 0)
+>                  | (supports_extension('S') || supports_extension('U') ? MSTATUS_TW : 0)
+757a836
 >       effective_value = state.mstatus;
-762a840,841
+762a842,843
 > 
 >       effective_value = state.mip;
-766a846,847
+766a848,849
 > 
 >       effective_value = state.mie;
-769a851,852
+769a853,854
 > 
 >       effective_value = state.mideleg;
-779a863,864
+779a865,866
 > 
 >       effective_value = state.medeleg;
-787a873,874
+787a875,876
 > 
 >       effective_value = state.minstret;
-796a884
+796a886
 >       effective_value = state.minstret;
-800a889
+800a891
 >       effective_value = state.scounteren;
-803a893
+803a895
 >       effective_value = state.mcounteren;
-821c911
+821c913
 <       if (max_xlen == 32)
 ---
 >       if (max_xlen == 32){		
-822a913
+822a915
 >       }	
-825,826c916,919
+825,826c918,921
 <                              get_field(val, SATP64_MODE) == SATP_MODE_SV48))
 <         state.satp = val & (SATP64_PPN | SATP64_MODE | rv64_ppn_mask);
 ---
@@ -299,7 +309,7 @@
 >       	state.satp = val & (SATP64_PPN | SATP64_MODE | rv64_ppn_mask);
 >       }
 >       effective_value = state.satp;
-829,838c922,991
+829,838c924,993
 <     case CSR_SEPC: state.sepc = val & ~(reg_t)1; break;
 <     case CSR_STVEC: state.stvec = val & ~(reg_t)2; break;
 <     case CSR_SSCRATCH: state.sscratch = val; break;
@@ -381,45 +391,45 @@
 >         effective_value = state.mtval;
 >         break;
 >     }
-856a1010,1011
+856a1012,1013
 > 
 >       effective_value = state.misa;
-861a1017
+861a1019
 >         effective_value = state.tselect;
-886a1043,1045
+886a1045,1047
 > 
 >         // If mcontrol_t had a more clear size it may make sense to bitcopy its contents.
 >         effective_value = val;
-894a1054,1055
+894a1056,1057
 >         
 >         effective_value = val;
-900d1060
+900d1062
 <       // TODO: ndreset and fullreset
-905a1066,1067
+905a1068,1069
 >         
 >       memcpy(&effective_value, &(state.dcsr), sizeof(dcsr_t));
-908a1071,1072
+908a1073,1074
 > 
 >       effective_value = state.dpc;
-911a1076,1077
+911a1078,1079
 > 
 >       effective_value = state.dscratch0;
-914a1081,1082
+914a1083,1084
 >     
 >       effective_value = state.dscratch1;
-918a1087,1088
+918a1089,1090
 > 
 >       effective_value = VU.vstart;
-922a1093,1094
+922a1095,1096
 > 
 >       effective_value = VU.vxsat;
-926a1099,1100
+926a1101,1102
 > 
 >       effective_value = VU.vxrm;
-928a1103,1104
+928a1105,1106
 > 
 >   update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "write");
-931,934c1107,1472
+931,934c1109,1476
 < // Note that get_csr is sometimes called when read side-effects should not
 < // be actioned.  In other words, Spike cannot currently support CSRs with
 < // side effects on reads.
@@ -496,9 +506,11 @@
 >                   || supports_extension('V');
 >       bool has_vs = supports_extension('V');
 > 
->       reg_t mask = MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_MPRV
+>       reg_t mask = MSTATUS_MIE | MSTATUS_MPIE 
+>                  | (supports_extension('U') ?  MSTATUS_MPRV : 0)
 >                  | (supports_extension('S') ? (MSTATUS_SUM | MSTATUS_SIE | MSTATUS_SPIE) : 0)
->                  | MSTATUS_MXR | MSTATUS_TW | MSTATUS_TVM | MSTATUS_TSR
+>                  | (supports_extension('S') ? (MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR) : 0)
+>                  | (supports_extension('S') || supports_extension('U') ? MSTATUS_TW : 0)
 >                  | (has_fs ? MSTATUS_FS : 0)
 >                  | (has_vs ? MSTATUS_VS : 0)
 >                  | (ext ? MSTATUS_XS : 0);
@@ -791,15 +803,15 @@
 > }
 > 
 > reg_t processor_t::get_csr_api(int which)
-965c1503,1505
+965c1507,1509
 <     require((which & ((xlen / 32) - 1)) == 0);
 ---
 >     //require((which & ((xlen / 32) - 1)) == 0);
 >     if((which & ((xlen / 32) - 1)) != 0)
 >         return 0xDEADBEEFDEADBEEF;
-966a1507
+966a1511
 >     // use this as the example for the callback call in the set_csr non-api function
-976,978c1517,1521
+976,978c1521,1525
 <       require_fp;
 <       if (!supports_extension('F'))
 <         break;
@@ -809,7 +821,7 @@
 >       //std::cout << "Past checking require fp" << std::endl;
 >       //if (!supports_extension('F'))
 >       //  break;
-981,983c1524,1526
+981,983c1528,1530
 <       require_fp;
 <       if (!supports_extension('F'))
 <         break;
@@ -817,50 +829,50 @@
 >       //require_fp;
 >       //if (!supports_extension('F'))
 >       //  break;
-986,988c1529,1530
+986,988c1533,1534
 <       require_fp;
 <       if (!supports_extension('F'))
 <         break;
 ---
 >       //if (!supports_extension('F'))
 >       //  break;
-991,992c1533,1534
+991,992c1537,1538
 <       if (!supports_extension('V'))
 <         break;
 ---
 >       //if (!supports_extension('V'))
 >       //  break;
-996,998d1537
+996,998d1541
 <       if (ctr_ok)
 <         return state.minstret;
 <       break;
-1004,1006d1542
+1004,1006d1546
 <       if (ctr_ok && xlen == 32)
 <         return state.minstret >> 32;
 <       break;
-1009c1545
+1009c1549
 <       if (xlen == 32)
 ---
 >       //if (ctr_ok && xlen == 32)
-1011c1547
+1011c1551
 <       break;
 ---
 >       //break;
-1035,1036c1571,1572
+1035,1036c1575,1576
 <       if (get_field(state.mstatus, MSTATUS_TVM))
 <         require_privilege(PRV_M);
 ---
 >       //if (get_field(state.mstatus, MSTATUS_TVM))
 >       //  require_privilege(PRV_M);
-1047c1583
+1047c1587
 <     case CSR_MARCHID: return 5;
 ---
 >     case CSR_MARCHID: return 4;
-1049c1585
+1049c1589
 <     case CSR_MVENDORID: return 0;
 ---
 >     case CSR_MVENDORID: return 0x602;
-1122a1659,2052
+1122a1663,2056
 >       //require_vector_vs;
 >       //if (!supports_extension('V'))
 >       //  break;
@@ -1255,25 +1267,25 @@
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
 >       return state.dscratch1;
 >     case CSR_VSTART:
-1123a2054,2055
+1123a2058,2059
 >       effective_value = VU.vstart;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1130a2063,2064
+1130a2067,2068
 >       effective_value = VU.vxsat;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1135a2070,2071
+1135a2074,2075
 >       effective_value = VU.vxrm;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1138a2075,2076
+1138a2079,2080
 >       effective_value = VU.vl;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1143a2082,2083
+1143a2086,2087
 >       effective_value = VU.vtype;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1148a2089,2090
+1148a2093,2094
 >       effective_value = VU.vlenb;
 >       update_generator_register(this->id, text_name.c_str(), effective_value, 0xffffffffffffffffull, "read");
-1249a2192
+1249a2196
 >   	update_generator_register(this->id, "mip", state.mip, 0xffffffffffffffff, "read");
-1264a2208
+1264a2212
 >   	update_generator_register(this->id, "mip", state.mip, 0xffffffffffffffff, "read");

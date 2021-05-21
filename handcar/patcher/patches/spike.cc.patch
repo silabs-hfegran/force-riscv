@@ -264,7 +264,7 @@
 >     const char arg2[] = "no_elf\0";
 >     memcpy(_stored_argv[0], arg1, strlen(arg1)+1);
 >     memcpy(_stored_argv[_stored_argc-1], arg2, strlen(arg2)+1);
-178,180c95,216
+178,180c95,427
 <   merge_overlapping_memory_regions(res);
 <   return res;
 < }
@@ -391,9 +391,7 @@
 > 
 >     return  SUCCESS;
 >   }
-182c218,485
-< int main(int argc, char** argv)
----
+> 
 > 
 >   // _resetArgMatrix function: clears the memory allocated to char** _stored_argv, uses count of number of enabled options to resize char** _stored_argv. 
 >   //               Then, memory is allocated for the elements and the first and last elements are set to dummy arguements.
@@ -556,6 +554,7 @@
 >       {"l2", {UNUSED, '0', "l2", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the l2 cache model
 >       {"log-cache-miss", {UNUSED, '0', "log-cache-miss", UNUSED, UNUSED, 0, ""}}, // if present, enable logging of estimated cache misses
 >       {"varch", {UNUSED, '0', "varch", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the RISC-V Vector uArch string
+>       {"priv", {UNUSED, '0', "priv", UNUSED, NEEDS_PATH, 0, ""}}, // Path argument is used to configure the RISC-V privilege mode string
 >       //
 >       //WARNING, IT'S NOT A GREAT IDEA TO PLAY WITH THESE FOLLOWING OPTIONS UNLESS YOU KNOW WHAT YOU'RE DOING
 >       //
@@ -603,7 +602,9 @@
 >         printf("token: %s\n", token.c_str());
 >       }
 >     }
-> 
+182c429,486
+< int main(int argc, char** argv)
+---
 >     if(_token_vector.size() > 0)
 >     {
 >       // Allocate argv
@@ -662,7 +663,7 @@
 > bool isa_D;     // true if double-precision floating pt extension configured in
 > 
 > void initialize_simulator(const char* options)
-183a487,538
+183a488,539
 >   // Hopefully the user has called set_simulator_parameter a number of times before calling initialize_simulator, but handle the contingency if they didn't.
 >   if(_pOptionsStorage == nullptr)
 >   {
@@ -715,25 +716,25 @@
 >     printf("\n");
 >   }
 >   
-192,193d546
+192,193d547
 <   size_t initrd_size;
 <   reg_t initrd_start = 0, initrd_end = 0;
-195,199d547
+195,199d548
 <   std::vector<std::pair<reg_t, mem_t*>> mems;
 <   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
 <   std::unique_ptr<icache_sim_t> ic;
 <   std::unique_ptr<dcache_sim_t> dc;
 <   std::unique_ptr<cache_sim_t> l2;
-201,204d548
+201,204d549
 <   bool log_commits = false;
 <   const char *log_path = nullptr;
 <   std::function<extension_t*()> extension;
 <   const char* initrd = NULL;
-208,210d551
+208,210d552
 <   const char* dtb_file = NULL;
 <   uint16_t rbb_port = 0;
 <   bool use_rbb = false;
-212,220d552
+212,220d553
 <   debug_module_config_t dm_config = {
 <     .progbufsize = 2,
 <     .max_bus_master_bits = 0,
@@ -743,15 +744,15 @@
 <     .support_abstract_csr_access = true,
 <     .support_haltgroups = true
 <   };
-222c554
+222c555
 < 
 ---
 >  
-226c558
+226c559
 < 
 ---
 >  
-235,277d566
+235,277d567
 <   auto const device_parser = [&plugin_devices](const char *s) {
 <     const std::string str(s);
 <     std::istringstream stream(str);
@@ -795,14 +796,14 @@
 <     plugin_devices.emplace_back(base, new mmio_plugin_device_t(name, args));
 <   };
 < 
-279,280d567
+279,280d568
 <   parser.help(&suggest_help);
 <   parser.option('h', "help", 0, [&](const char* s){help(0);});
-285d571
+285d572
 <   parser.option('m', 0, 1, [&](const char* s){mems = make_mems(s);});
-288d573
+288d574
 <   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
-291,293c576,578
+291,293c577,579
 <   parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
 <   parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
 <   parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
@@ -810,15 +811,15 @@
 >   parser.option(0, "ic", 1, [&](const char* s){ic = new icache_sim_t(s);});
 >   parser.option(0, "dc", 1, [&](const char* s){dc = new dcache_sim_t(s);});
 >   parser.option(0, "l2", 1, [&](const char* s){l2 = cache_sim_t::construct(s, "L2$");});
-298,299c583
+298,299c584
 <   parser.option(0, "device", 1, device_parser);
 <   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
 ---
 >   //parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
-302,303d585
+302,303d586
 <   parser.option(0, "dtb", 1, [&](const char *s){dtb_file = s;});
 <   parser.option(0, "initrd", 1, [&](const char* s){initrd = s;});
-312,332d593
+312,332d594
 <   parser.option(0, "dm-progsize", 1,
 <       [&](const char* s){dm_config.progbufsize = atoi(s);});
 <   parser.option(0, "dm-sba", 1,
@@ -840,7 +841,7 @@
 <   parser.option(0, "log", 1,
 <                 [&](const char* s){log_path = s;});
 < 
-334,367d594
+334,367d595
 <   std::vector<std::string> htif_args(argv1, (const char*const*)argv + argc);
 <   if (mems.empty())
 <     mems = make_mems("2048");
@@ -875,7 +876,7 @@
 <     printf("%s", s.get_dts());
 <     return 0;
 <   }
-368a596,603
+368a597,604
 >   std::string isa_str = isa;
 >   isa_rv32 = isa_str.find("RV32") != std::string::npos;
 >   isa_D = (isa_str.find("F") != std::string::npos) && (isa_str.find("D") != std::string::npos);
@@ -884,7 +885,7 @@
 >     hartids);
 >   _pSimulatorTopLevel->set_dtb_enabled(dtb_enabled);
 >  
-375,377c610,1154
+375,377c611,649
 <     if (ic) s.get_core(i)->get_mmu()->register_memtracer(&*ic);
 <     if (dc) s.get_core(i)->get_mmu()->register_memtracer(&*dc);
 <     if (extension) s.get_core(i)->register_extension(extension());
@@ -895,6 +896,7 @@
 >  
 >   _pSimulatorTopLevel->set_log(log);
 >   _pSimulatorTopLevel->set_histogram(histogram);
+> 
 > 
 >   argc=0;
 >   argv=nullptr;
@@ -927,16 +929,23 @@
 >   {
 >     delete dc;
 >     dc = nullptr;
->   }
-> 
+380,382c652,657
+<   s.set_debug(debug);
+<   s.configure_log(log, log_commits);
+<   s.set_histogram(histogram);
+---
 >   if(l2 != nullptr)
 >   {
 >     delete l2;
 >     l2 = nullptr;
 >   }
 > }
-> 
-> 
+384d658
+<   auto return_code = s.run();
+386,387c660,673
+<   for (auto& mem : mems)
+<     delete mem.second;
+---
 > void clearSimulatorLeaveOptions()
 > {
 >   if(_pSimulatorTopLevel != nullptr)
@@ -951,13 +960,18 @@
 >     delete ic;
 >     ic = nullptr;
 >   }
-> 
+389,390c675,679
+<   for (auto& plugin_device : plugin_devices)
+<     delete plugin_device.second;
+---
 >   if(dc != nullptr)
 >   {
 >     delete dc;
 >     dc = nullptr;
 >   }
-> 
+392c681,834
+<   return return_code;
+---
 >   if(l2 != nullptr)
 >   {
 >     delete l2;
@@ -1112,7 +1126,7 @@
 >     isize = 0;
 >     return 1; // Failed to get loaded insn
 >   }
-> }
+393a836,1339
 > 
 > int get_simulator_version(char* version)
 > {
@@ -1434,11 +1448,8 @@
 >   if(length < 0)
 >   {
 >     return 2;
-380,382c1157,1167
-<   s.set_debug(debug);
-<   s.configure_log(log, log_commits);
-<   s.set_histogram(histogram);
----
+>   }
+> 
 >   if(_pSimulatorTopLevel->sparse_is_pa_initialized(static_cast<reg_t>(*addr), static_cast<size_t>(length)))
 >   {
 >     _pSimulatorTopLevel->sparse_write(static_cast<reg_t>(*addr), data, static_cast<size_t>(length));
@@ -1450,9 +1461,7 @@
 > 
 >   return 0;
 > }
-384c1169,1175
-<   auto return_code = s.run();
----
+> 
 > int initialize_simulator_memory(int target_id, const uint64_t* addr, int length, uint64_t data)
 > { 
 >   // check that the pointers point to something 
@@ -1460,26 +1469,18 @@
 >   {
 >     return 1;
 >   }
-386,387c1177,1181
-<   for (auto& mem : mems)
-<     delete mem.second;
----
+> 
 >   // check that the length argument is not out of regulation
 >   if(length < 0 || length > 8)
 >   {
 >     return 2;
 >   }
-389,390c1183,1184
-<   for (auto& plugin_device : plugin_devices)
-<     delete plugin_device.second;
----
+> 
 >   // the checks such as they are have passed, perform the read
 >   _pSimulatorTopLevel->sparse_initialize_pa(static_cast<reg_t>(*addr), data, static_cast<size_t>(length));
-392c1186
-<   return return_code;
----
+> 
 >   return 0;
-393a1188,1337
+> }
 > 
 > int translate_virtual_address(int target_id, const uint64_t* vaddr, int intent, uint64_t* paddr, uint64_t* memattrs)
 > {
