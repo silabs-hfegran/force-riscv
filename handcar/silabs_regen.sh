@@ -13,6 +13,6 @@ export FORCE_CC=g++
 export LD_LIBRARY_PATH=${FORCE_PYTHON_LIB}:${LD_LIBRARY_PATH}
 export OPTIMIZATION=-O0
 
-bsub -Ip -q batch -n 8 ./regenerate_and_build.bash -n
+bsub -Ip -q batch -n 8 ./regenerate_and_build.bash
 
 
